@@ -1,11 +1,11 @@
 name: Build Windows  
   
 on:  
-  workflow_dispatch:
   push:  
     branches: [ master ]  
   pull_request:  
     branches: [ master ]  
+  workflow_dispatch:  
   
 jobs:  
   build-windows:  
@@ -27,8 +27,31 @@ jobs:
         shell: msys2 {0}  
         run: cmake --build build --config Release  
   
-      - name: Upload artifact  
-        uses: actions/upload-artifact@v4  
+      - name: Locate built executable  
+        shell: msys2 {0}  
+        run: find "$(pwd)" -iname "pt2-clone.exe" -type f -exec echo "BIN_PATH={}" \; >> "$GITHUB_ENV"  
+  
+      - name: Locate SDL2.dll in MSYS2 toolchain  
+        shell: msys2 {0}  
+        run: find /mingw64 -iname "SDL2.dll" -type f -exec echo "DLL_PATH={}" \; >> "$GITHUB_ENV"  
+  
+      - name: Create distribution directory  
+        shell: msys2 {0}  
+        run: mkdir -p dist  
+  
+      - name: Copy executable into distribution directory  
+        shell: msys2 {0}  
+        run: cp "$BIN_PATH" dist/  
+  
+      - name: Copy SDL2.dll into distribution directory  
+        shell: msys2 {0}  
+        run: cp "$DLL_PATH" dist/  
+  
+      - name: Show final distribution directory contents  
+        shell: msys2 {0}  
+        run: find dist -type f  
+  
+      - uses: actions/upload-artifact@v4  
         with:  
           name: pt2-clone-windows  
-          path: release/other/pt2-clone.exe
+          path: dist
